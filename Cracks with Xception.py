@@ -141,4 +141,62 @@ model = keras.models.Model(inputs=base_model.input, outputs=output)
 
 
 
+for layer in base_model.layers: # freeze the weights of the base model
+    layer.trainable = False
+    
+optimizer = keras.optimizers.Nadam(learning_rate=1e-4)
+model.compile(loss="mean_absolute_error", optimizer=optimizer,
+              metrics=["accuracy"]
+              )
+history = model.fit(train_set,
+                    validation_data=valid_set,
+                    epochs=5)
+
+
+
+for layer in base_model.layers: # unfreeze the weights and continue training
+    layer.trainable = True
+
+checkpoint_cb = keras.callbacks.ModelCheckpoint('my_model.h5', save_best_only=True)
+early_stopping_cb = keras.callbacks.EarlyStopping(patience=5,
+                                                  restore_best_weights=True)
+history = model.fit(train_set,
+                    validation_data=valid_set,
+                    epochs=10,
+                    callbacks=[checkpoint_cb, early_stopping_cb])
+
+
+model = keras.models.load_model('my_model.h5')
+
+
+mae = model.evaluate(test_set)
+
+
+
+
+
+fig = px.line(
+    history.history,
+    y=['loss', 'val_loss'],
+    labels={'index': "Epoch", 'value': "Loss"},
+    title="Training and Validation Loss Over Time"
+)
+
+fig.show()
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
